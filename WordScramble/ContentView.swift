@@ -16,6 +16,8 @@ struct ContentView: View {
     @State private var errorMessage = ""
     @State private var showingError = false
     
+    @State private var score = 0
+    
     var body: some View {
         NavigationStack {
             List {
@@ -31,23 +33,43 @@ struct ContentView: View {
                         }
                     }
                 }
+                
+                
             }
             .navigationTitle(rootWord)
-            .onSubmit(addNewWord) // enter drückem im TextField
+            .toolbar {
+                Button("New Word", action: startGame)
+            }
+            .onSubmit(addNewWord) // enter drücken im TextField
             .onAppear(perform: startGame)
             .alert(errorTitle, isPresented: $showingError) {
                 Button("Ok") { }
             } message: {
                 Text(errorMessage)
             }
+          
+            Spacer()
+            Spacer()
+            
+            Text("Score: \(score)")
+                .font(.title.bold())
+                .foregroundStyle(.black)
+            
         }
     }
     func addNewWord() {
         // lowercase and trim the word, to make sure we don't add duplicate words with case differences
         let answer = newWord.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
 
-        // exit if the remaining string is empty
-        guard answer.count > 0 else { return }
+        guard answer.count > 2 else {
+            wordError(title: "To short.", message: "Your word schould at least has three letters.")
+            return
+        }
+        
+        guard answer != rootWord else {
+            wordError(title: "The New word is the start word", message: "Be more creative!")
+            return
+        }
 
         guard isOriginal(word: answer) else {
             wordError(title: "Word used already", message: "Be more original")
@@ -66,6 +88,9 @@ struct ContentView: View {
 
         usedWords.insert(answer, at: 0)
         newWord = ""
+        
+        // Punkte aktualisieren
+        points()
     }
     
     func startGame() {
@@ -84,7 +109,7 @@ struct ContentView: View {
             }
         }
 
-        // If were are *here* then there was a problem – trigger a crash and report the error
+        // If we are *here* then there was a problem – trigger a crash and report the error
         fatalError("Could not load start.txt from bundle.")
     }
     
@@ -118,6 +143,17 @@ struct ContentView: View {
         errorTitle = title
         errorMessage = message
         showingError = true
+    }
+    
+    func points() {
+        
+        
+        // you get score += 1 per answer.count
+        score += 1
+        // you get score += 1 per added answer
+        for word in usedWords {
+            score += word.count
+        }
     }
     
 }
